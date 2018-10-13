@@ -15,32 +15,33 @@ import numpy as np
 from mpi4py import MPI
 
 
-def learn(network, env,
-          seed=None,
-          total_timesteps=None,
-          nb_epochs=None, # with default settings, perform 1M steps total
-          nb_epoch_cycles=20,
-          nb_rollout_steps=100,
-          reward_scale=1.0,
-          render=False,
-          render_eval=False,
-          noise_type='adaptive-param_0.2',
-          normalize_returns=False,
-          normalize_observations=True,
-          critic_l2_reg=1e-2,
-          actor_lr=1e-4,
-          critic_lr=1e-3,
-          popart=False,
-          gamma=0.99,
-          clip_norm=None,
-          nb_train_steps=50, # per epoch cycle and MPI worker,
-          nb_eval_steps=100,
-          batch_size=64, # per MPI worker
-          tau=0.01,
-          eval_env=None,
-          param_noise_adaption_interval=50,
-          **network_kwargs):
-
+def learn(
+        network,
+        env,
+        seed=None,
+        total_timesteps=None,
+        nb_epochs=None,  # with default settings, perform 1M steps total
+        nb_epoch_cycles=20,
+        nb_rollout_steps=100,
+        reward_scale=1.0,
+        render=False,
+        render_eval=False,
+        noise_type='adaptive-param_0.2',
+        normalize_returns=False,
+        normalize_observations=True,
+        critic_l2_reg=1e-2,
+        actor_lr=1e-4,
+        critic_lr=1e-3,
+        popart=False,
+        gamma=0.99,
+        clip_norm=None,
+        nb_train_steps=50,  # per epoch cycle and MPI worker,
+        nb_eval_steps=100,
+        batch_size=64,  # per MPI worker
+        tau=0.01,
+        eval_env=None,
+        param_noise_adaption_interval=50,
+        **network_kwargs):
 
     if total_timesteps is not None:
         assert nb_epochs is None
@@ -72,16 +73,31 @@ def learn(network, env,
                 action_noise = NormalActionNoise(mu=np.zeros(nb_actions), sigma=float(stddev) * np.ones(nb_actions))
             elif 'ou' in current_noise_type:
                 _, stddev = current_noise_type.split('_')
-                action_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(nb_actions), sigma=float(stddev) * np.ones(nb_actions))
+                action_noise = OrnsteinUhlenbeckActionNoise(
+                    mu=np.zeros(nb_actions), sigma=float(stddev) * np.ones(nb_actions))
             else:
                 raise RuntimeError('unknown noise type "{}"'.format(current_noise_type))
 
     max_action = env.action_space.high
     logger.info('scaling actions by {} before executing in env'.format(max_action))
-    agent = DDPG(actor, critic, memory, env.observation_space.shape, env.action_space.shape,
-        gamma=gamma, tau=tau, normalize_returns=normalize_returns, normalize_observations=normalize_observations,
-        batch_size=batch_size, action_noise=action_noise, param_noise=param_noise, critic_l2_reg=critic_l2_reg,
-        actor_lr=actor_lr, critic_lr=critic_lr, enable_popart=popart, clip_norm=clip_norm,
+    agent = DDPG(
+        actor,
+        critic,
+        memory,
+        env.observation_space.shape,
+        env.action_space.shape,
+        gamma=gamma,
+        tau=tau,
+        normalize_returns=normalize_returns,
+        normalize_observations=normalize_observations,
+        batch_size=batch_size,
+        action_noise=action_noise,
+        param_noise=param_noise,
+        critic_l2_reg=critic_l2_reg,
+        actor_lr=actor_lr,
+        critic_lr=critic_lr,
+        enable_popart=popart,
+        clip_norm=clip_norm,
         reward_scale=reward_scale)
     logger.info('Using agent with the following configuration:')
     logger.info(str(agent.__dict__.items()))
@@ -123,7 +139,9 @@ def learn(network, env,
                 if rank == 0 and render:
                     env.render()
                 assert max_action.shape == action.shape
-                new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
+                new_obs, r, done, info = env.step(
+                    max_action *
+                    action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                 t += 1
                 if rank == 0 and render:
                     env.render()
@@ -171,7 +189,9 @@ def learn(network, env,
                 eval_episode_reward = 0.
                 for t_rollout in range(nb_eval_steps):
                     eval_action, eval_q, _, _ = agent.step(eval_obs, apply_noise=False, compute_Q=True)
-                    eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
+                    eval_obs, eval_r, eval_done, eval_info = eval_env.step(
+                        max_action * eval_action
+                    )  # scale for execution in env (as far as DDPG is concerned, every action is in [-1, 1])
                     if render_eval:
                         eval_env.render()
                     eval_episode_reward += eval_r
@@ -208,6 +228,7 @@ def learn(network, env,
             combined_stats['eval/return_history'] = np.mean(eval_episode_rewards_history)
             combined_stats['eval/Q'] = eval_qs
             combined_stats['eval/episodes'] = len(eval_episode_rewards)
+
         def as_scalar(x):
             if isinstance(x, np.ndarray):
                 assert x.size == 1
@@ -215,9 +236,10 @@ def learn(network, env,
             elif np.isscalar(x):
                 return x
             else:
-                raise ValueError('expected scalar, got %s'%x)
+                raise ValueError('expected scalar, got %s' % x)
+
         combined_stats_sums = MPI.COMM_WORLD.allreduce(np.array([as_scalar(x) for x in combined_stats.values()]))
-        combined_stats = {k : v / mpi_size for (k,v) in zip(combined_stats.keys(), combined_stats_sums)}
+        combined_stats = {k: v / mpi_size for (k, v) in zip(combined_stats.keys(), combined_stats_sums)}
 
         # Total statistics.
         combined_stats['total/epochs'] = epoch + 1
@@ -235,6 +257,5 @@ def learn(network, env,
             if eval_env and hasattr(eval_env, 'get_state'):
                 with open(os.path.join(logdir, 'eval_env_state.pkl'), 'wb') as f:
                     pickle.dump(eval_env.get_state(), f)
-
 
     return agent
