@@ -1,10 +1,10 @@
 import sys
 import multiprocessing
 import os.path as osp
-import gym
 from collections import defaultdict
 import tensorflow as tf
 import numpy as np
+import gym
 
 from baselines.common.vec_env.vec_frame_stack import VecFrameStack
 from baselines.common.cmd_util import common_arg_parser, parse_unknown_args, make_vec_env
@@ -72,12 +72,7 @@ def train(args, extra_args):
 
     print('Training {} on {}:{} with arguments \n{}'.format(args.alg, env_type, env_id, alg_kwargs))
 
-    model = learn(
-        env=env,
-        seed=seed,
-        total_timesteps=total_timesteps,
-        **alg_kwargs
-    )
+    model = learn(env=env, seed=seed, total_timesteps=total_timesteps, **alg_kwargs)
 
     return model, env
 
@@ -114,21 +109,20 @@ def build_env(args):
     elif env_type == 'retro':
         import retro
         gamestate = args.gamestate or retro.State.DEFAULT
-        env = retro_wrappers.make_retro(game=args.env, state=gamestate, max_episode_steps=10000,
-                                        use_restricted_actions=retro.Actions.DISCRETE)
+        env = retro_wrappers.make_retro(
+            game=args.env, state=gamestate, max_episode_steps=10000, use_restricted_actions=retro.Actions.DISCRETE)
         env.seed(args.seed)
         env = bench.Monitor(env, logger.get_dir())
         env = retro_wrappers.wrap_deepmind_retro(env)
 
     else:
-       get_session(tf.ConfigProto(allow_soft_placement=True,
-                                   intra_op_parallelism_threads=1,
-                                   inter_op_parallelism_threads=1))
+        get_session(
+            tf.ConfigProto(allow_soft_placement=True, intra_op_parallelism_threads=1, inter_op_parallelism_threads=1))
 
-       env = make_vec_env(env_id, env_type, args.num_env or 1, seed, reward_scale=args.reward_scale)
+        env = make_vec_env(env_id, env_type, args.num_env or 1, seed, reward_scale=args.reward_scale)
 
-       if env_type == 'mujoco':
-           env = VecNormalize(env)
+        if env_type == 'mujoco':
+            env = VecNormalize(env)
 
     return env
 
@@ -143,7 +137,7 @@ def get_env_type(env_id):
             if env_id in e:
                 env_type = g
                 break
-        assert env_type is not None, 'env_id {} is not recognized in env types'.format(env_id, _game_envs.keys())
+        assert env_type is not None, 'env_id {} is not recognized in env types {}'.format(env_id, _game_envs.keys())
 
     return env_type, env_id
 
@@ -153,6 +147,7 @@ def get_default_network(env_type):
         return 'cnn'
     else:
         return 'mlp'
+
 
 def get_alg_module(alg, submodule=None):
     submodule = submodule or alg
@@ -179,21 +174,19 @@ def get_learn_function_defaults(alg, env_type):
     return kwargs
 
 
-
 def parse_cmdline_kwargs(args):
     '''
     convert a list of '='-spaced command-line arguments to a dictionary, evaluating python objects when possible
     '''
-    def parse(v):
 
+    def parse(v):
         assert isinstance(v, str)
         try:
             return eval(v)
         except (NameError, SyntaxError):
             return v
 
-    return {k: parse(v) for k,v in parse_unknown_args(args).items()}
-
+    return {k: parse(v) for k, v in parse_unknown_args(args).items()}
 
 
 def main():
@@ -221,11 +214,13 @@ def main():
         logger.log("Running trained model")
         env = build_env(args)
         obs = env.reset()
-        def initialize_placeholders(nlstm=128,**kwargs):
-            return np.zeros((args.num_env or 1, 2*nlstm)), np.zeros((1))
+
+        def initialize_placeholders(nlstm=128, **kwargs):
+            return np.zeros((args.num_env or 1, 2 * nlstm)), np.zeros((1))
+
         state, dones = initialize_placeholders(**extra_args)
         while True:
-            actions, _, state, _ = model.step(obs,S=state, M=dones)
+            actions, _, state, _ = model.step(obs, S=state, M=dones)
             obs, _, done, _ = env.step(actions)
             env.render()
             done = done.any() if isinstance(done, np.ndarray) else done
@@ -234,6 +229,7 @@ def main():
                 obs = env.reset()
 
         env.close()
+
 
 if __name__ == '__main__':
     main()
