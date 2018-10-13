@@ -1,6 +1,6 @@
 import sys
 import multiprocessing
-import os.path as osp
+import os
 from collections import defaultdict
 import tensorflow as tf
 import numpy as np
@@ -29,6 +29,12 @@ try:
     import roboschool
 except ImportError:
     roboschool = None
+
+arg_parser = common_arg_parser()
+args, unknown_args = arg_parser.parse_known_args()
+extra_args = parse_cmdline_kwargs(unknown_args)
+os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
+print(args.gpu)
 
 _game_envs = defaultdict(set)
 for env in gym.envs.registry.all():
@@ -98,7 +104,7 @@ def build_env(args):
         elif alg == 'trpo_mpi':
             env = atari_wrappers.make_atari(env_id)
             env.seed(seed)
-            env = bench.Monitor(env, logger.get_dir() and osp.join(logger.get_dir(), str(rank)))
+            env = bench.Monitor(env, logger.get_dir() and os.path.join(logger.get_dir(), str(rank)))
             env = atari_wrappers.wrap_deepmind(env)
             # TODO check if the second seeding is necessary, and eventually remove
             env.seed(seed)
@@ -192,10 +198,6 @@ def parse_cmdline_kwargs(args):
 def main():
     # configure logger, disable logging in child MPI processes (with rank > 0)
 
-    arg_parser = common_arg_parser()
-    args, unknown_args = arg_parser.parse_known_args()
-    extra_args = parse_cmdline_kwargs(unknown_args)
-
     if MPI is None or MPI.COMM_WORLD.Get_rank() == 0:
         rank = 0
         logger.configure()
@@ -207,7 +209,7 @@ def main():
     env.close()
 
     if args.save_path is not None and rank == 0:
-        save_path = osp.expanduser(args.save_path)
+        save_path = os.path.expanduser(args.save_path)
         model.save(save_path)
 
     if args.play:
