@@ -2,6 +2,7 @@ import sys
 import multiprocessing
 import os
 from collections import defaultdict
+from importlib import import_module
 import tensorflow as tf
 import numpy as np
 import gym
@@ -10,7 +11,6 @@ from baselines.common.vec_env.vec_frame_stack import VecFrameStack
 from baselines.common.cmd_util import common_arg_parser, parse_unknown_args, make_vec_env
 from baselines.common.tf_util import get_session
 from baselines import bench, logger
-from importlib import import_module
 
 from baselines.common.vec_env.vec_normalize import VecNormalize
 from baselines.common import atari_wrappers, retro_wrappers
@@ -194,12 +194,13 @@ def main():
     args, unknown_args = arg_parser.parse_known_args()
     extra_args = parse_cmdline_kwargs(unknown_args)
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
-    print(args.gpu)
 
     # configure logger, disable logging in child MPI processes (with rank > 0)
     if MPI is None or MPI.COMM_WORLD.Get_rank() == 0:
         rank = 0
-        logger.configure()
+        logger.configure(
+            dir=os.path.join(args.workdir, 'log') if args.workdir is not None else None,
+            format_strs=args.logformat.split(','))
     else:
         logger.configure(format_strs=[])
         rank = MPI.COMM_WORLD.Get_rank()
