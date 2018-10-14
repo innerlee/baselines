@@ -30,12 +30,6 @@ try:
 except ImportError:
     roboschool = None
 
-arg_parser = common_arg_parser()
-args, unknown_args = arg_parser.parse_known_args()
-extra_args = parse_cmdline_kwargs(unknown_args)
-os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
-print(args.gpu)
-
 _game_envs = defaultdict(set)
 for env in gym.envs.registry.all():
     # TODO: solve this with regexes
@@ -196,8 +190,13 @@ def parse_cmdline_kwargs(args):
 
 
 def main():
-    # configure logger, disable logging in child MPI processes (with rank > 0)
+    arg_parser = common_arg_parser()
+    args, unknown_args = arg_parser.parse_known_args()
+    extra_args = parse_cmdline_kwargs(unknown_args)
+    os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
+    print(args.gpu)
 
+    # configure logger, disable logging in child MPI processes (with rank > 0)
     if MPI is None or MPI.COMM_WORLD.Get_rank() == 0:
         rank = 0
         logger.configure()
