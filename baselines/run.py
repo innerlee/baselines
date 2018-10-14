@@ -199,7 +199,7 @@ def main():
     if MPI is None or MPI.COMM_WORLD.Get_rank() == 0:
         rank = 0
         logger.configure(
-            dir=os.path.join(args.workdir, 'log') if args.workdir is not None else None,
+            dir=os.path.join(args.logdir, 'log') if args.logdir is not None else None,
             format_strs=args.logformat.split(','))
     else:
         logger.configure(format_strs=[])

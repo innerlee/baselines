@@ -104,7 +104,7 @@ def common_arg_parser():
     parser.add_argument('--save_path', help='Path to save trained model to', default=None, type=str)
     parser.add_argument('--play', default=False, action='store_true')
     parser.add_argument('--gpu', default='0', type=str, help='which gpu to use')
-    parser.add_argument('--workdir', default=None, help='work dir')
+    parser.add_argument('--logdir', default=None, help='work dir')
     parser.add_argument('--logformat', default='stdout,log,csv,tensorboard', help='logging format')
     return parser
 
