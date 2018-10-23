@@ -78,6 +78,7 @@ def train(args, extra_args):
         log_interval=1,
         load_path=args.load_path,
         render=args.render,
+        ent_coef=args.ent_coef,
         **alg_kwargs
     )
 
@@ -95,7 +96,6 @@ def build_env(args, mode="train"):
     nenv = args.num_env or ncpu
     alg = args.alg
     seed = args.seed
-
     env_type, env_id = get_env_type(args.env)
 
     if env_type in {'atari', 'retro'}:
@@ -115,7 +115,7 @@ def build_env(args, mode="train"):
                                    intra_op_parallelism_threads=1,
                                    inter_op_parallelism_threads=1))
        env = make_vec_env(env_id, env_type, num_env or 1, seed, reward_scale=args.reward_scale, render=args.render,\
-            stepNumMax=args.stepNumMax, sparse1_dis=args.sparse1_dis, play=args.render,record=args.record,\
+            stepNumMax=args.stepNumMax, sparse1_dis=args.sparse1_dis, play=args.render,record=args.record,task2InitNoise=args.task2InitNoise,\
             rewardModeForArm3d=args.rewardModeForArm3d, initStateForArm3dTask2=[0.56, 0.5, -1.5, -1.74429440, -0.6, -0.9, 1.75])
        if env_type == 'mujoco' or 'arm3d':
            if args.normalize:
@@ -127,11 +127,9 @@ def get_env_type(env_id):
     if env_id in _game_envs.keys():
         env_type = env_id
         env_id = [g for g in _game_envs[env_type]][0]
-    # @llx s
     elif 'arm3d' in env_id:
         #['arm3d_task1', 'arm3d_task1', 'arm3d_task2', 'arm3d']
         env_type = 'arm3d'
-    # @llx e
     else:
         env_type = None
         for g, e in _game_envs.items():

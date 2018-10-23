@@ -23,7 +23,7 @@ from curriculum.envs.arm3d.arm3d_move_peg_env import Arm3dMovePegEnv
 from curriculum.envs.arm3d.arm3d_disc_env import Arm3dDiscEnv, Arm3dDiscEnvllx
 
 def make_vec_env(env_id, env_type, num_env, seed, wrapper_kwargs=None, start_index=0, reward_scale=1.0, gamestate=None,render=False,play=False, record=False,\
-                stepNumMax = 300,sparse1_dis=0.1, rewardModeForArm3d=None, initStateForArm3dTask2=None):
+                stepNumMax = 300,sparse1_dis=0.1, rewardModeForArm3d=None, initStateForArm3dTask2=None,task2InitNoise=False):
     """
     Create a wrapped, monitored SubprocVecEnv for Atari and MuJoCo.
     """
@@ -46,7 +46,8 @@ def make_vec_env(env_id, env_type, num_env, seed, wrapper_kwargs=None, start_ind
             stepNumMax = stepNumMax,
             sparse1_dis=sparse1_dis, 
             rewardModeForArm3d=rewardModeForArm3d, 
-            initStateForArm3dTask2=initStateForArm3dTask2
+            initStateForArm3dTask2=initStateForArm3dTask2,
+            task2InitNoise=task2InitNoise
         )
 
     set_global_seeds(seed)
@@ -55,7 +56,7 @@ def make_vec_env(env_id, env_type, num_env, seed, wrapper_kwargs=None, start_ind
 
 
 def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1.0, gamestate=None, wrapper_kwargs=None,render=False,play=False, record=False,\
-                 indexTasks=None,stepNumMax = 300,sparse1_dis=0.1, rewardModeForArm3d=None, initStateForArm3dTask2=None):
+                 indexTasks=None,stepNumMax = 300,sparse1_dis=0.1, rewardModeForArm3d=None, initStateForArm3dTask2=None, task2InitNoise=False):
     mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
     if env_id == 'arm3d_task12':
         if indexTasks % 2 == 0:
@@ -82,7 +83,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
                 play=play,
                 record=record)
         elif indexTasks % 2 == 1:
-            env = Arm3dDiscEnvllx(stepNumMax=stepNumMax, sparse1_dis=sparse1_dis)
+            env = Arm3dDiscEnvllx(stepNumMax=stepNumMax, sparse1_dis=sparse1_dis, task2InitNoise=task2InitNoise)
             env.envId = envsIndex
 
             env.rewardMode = rewardModeForArm3d
@@ -119,7 +120,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
         #                 allow_early_resets=True, render=render)
 
     elif env_id == 'arm3d_task1':
-        env = Arm3dDiscEnvllx(envIdLLX=1, stepNumMax=stepNumMax, sparse1_dis=sparse1_dis)
+        env = Arm3dDiscEnvllx(envIdLLX=1, stepNumMax=stepNumMax, sparse1_dis=sparse1_dis, task2InitNoise=task2InitNoise)
         env.envId = envsIndex
 
         env.rewardMode = rewardModeForArm3d
@@ -128,7 +129,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
         env.unwrapped = None
         env._configured = None
         env.spec.id = 99
-        env.seed(seed + 10000 * mpi_rank + rank if seed is not None else None)
+        env.seed(seed + subrank if seed is not None else None)
         # use the initial disc position of task2 as the goal to task1
         tmp_env = Arm3dDiscEnv()
         tmp_env.reset(init_state=initStateForArm3dTask2)
@@ -142,7 +143,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
             record=record)
 
     elif env_id == 'arm3d_task2':
-        env = Arm3dDiscEnvllx(stepNumMax=stepNumMax * 2, sparse1_dis=sparse1_dis)
+        env = Arm3dDiscEnvllx(stepNumMax=stepNumMax * 2, sparse1_dis=sparse1_dis, task2InitNoise=task2InitNoise)
         env.envId = envsIndex
 
         env.rewardMode = rewardModeForArm3d
@@ -257,12 +258,7 @@ def common_arg_parser():
     parser.add_argument('--num_timesteps', type=float, default=1e6)
     parser.add_argument('--network', help='network type (mlp, cnn, lstm, cnn_lstm, conv_only)', default=None)
     parser.add_argument('--gamestate', help='game state to load (so far only used in retro games)', default=None)
-    parser.add_argument(
-        '--num_env',
-        help=
-        'Number of environment copies being run in parallel. When not specified, set to number of cpus for Atari, and to 1 for Mujoco',
-        default=None,
-        type=int)
+    parser.add_argument('--num_env',help='Number of environment copies being run in parallel. When not specified, set to number of cpus for Atari, and to 1 for Mujoco',default=None,type=int)
     parser.add_argument('--num_env_play', type=int, default=1)
     parser.add_argument('--reward_scale', help='Reward scale factor. Default: 1.0', default=1.0, type=float)
     parser.add_argument('--save_path', help='Path to save trained model to', default=None, type=str)
@@ -273,14 +269,12 @@ def common_arg_parser():
     parser.add_argument('--rewardModeForArm3d', help='reward Mode for Arm3d', type=str, default='')
     parser.add_argument('--render', default=False, action='store_true')
     parser.add_argument('--record', default=False, action='store_true')
+    parser.add_argument('--task2InitNoise', default=False, action='store_true')
     parser.add_argument('--ps', help='Some key word for save special log', type=str, default='')
     parser.add_argument('--stepNumMax', help='stepNumMax', type=int, default=300)
     parser.add_argument('--sparse1_dis', type=float, default=0.1)
-    parser.add_argument(
-        '--load_num_env',
-        help='Number of environment copies being run in parallel with a loaded model',
-        type=int,
-        default=None)
+    parser.add_argument('--ent_coef', type=float, default=0.00)
+    parser.add_argument('--load_num_env',help='Number of environment copies being run in parallel with a loaded model',type=int,default=None)
     return parser
 
 def robotics_arg_parser():
