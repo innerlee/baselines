@@ -269,7 +269,7 @@ def common_arg_parser():
     parser.add_argument('--rewardModeForArm3d', help='reward Mode for Arm3d', type=str, default='')
     parser.add_argument('--render', default=False, action='store_true')
     parser.add_argument('--record', default=False, action='store_true')
-    parser.add_argument('--task2InitNoise', default=False, action='store_true')
+    parser.add_argument('--task2InitNoise', type=float, default=0.0)
     parser.add_argument('--ps', help='Some key word for save special log', type=str, default='')
     parser.add_argument('--stepNumMax', help='stepNumMax', type=int, default=300)
     parser.add_argument('--sparse1_dis', type=float, default=0.1)

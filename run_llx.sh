@@ -6,7 +6,7 @@ source activate rllab_goal_rl
 # python testArm3d.py
 
 # test noise
-python -m baselines.run --render  --task2InitNoise --ps _TfRunningMeanStd_ecoef0.00_removeTotalTask_removeNoise  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/test
+python -m baselines.run --render  --task2InitNoise 0.1 --ps _TfRunningMeanStd_ecoef0.00_removeTotalTask_removeNoise  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/test
 
 #10.23 
 # add self.task2InitNoise  in arm3d, so we should use --task2InitNoise to add noise to task2
