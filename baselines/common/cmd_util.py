@@ -56,6 +56,7 @@ def make_vec_env(env_id, env_type, num_env, seed, wrapper_kwargs=None, start_ind
 
 def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1.0, gamestate=None, wrapper_kwargs=None,render=False,play=False, record=False,\
                  indexTasks=None,stepNumMax = 300,sparse1_dis=0.1, rewardModeForArm3d=None, initStateForArm3dTask2=None):
+    mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
     if env_id == 'arm3d_task12':
         if indexTasks % 2 == 0:
             env = Arm3dDiscEnvllx(envIdLLX=1, stepNumMax=stepNumMax, sparse1_dis=sparse1_dis)
@@ -75,8 +76,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
 
             env = Monitor(
                 env,
-                logger.get_dir() and os.path.join(logger.get_dir(),
-                                                    str(mpi_rank) + '.' + str(rank)),
+                logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
                 allow_early_resets=True,
                 render=render,
                 play=play,
@@ -96,8 +96,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
 
             env = Monitor(
                 env,
-                logger.get_dir() and os.path.join(logger.get_dir(),
-                                                    str(mpi_rank) + '.' + str(rank)),
+                logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
                 allow_early_resets=True,
                 render=render,
                 play=play,
@@ -116,7 +115,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
         #     env.spec.id = 99
         #     env.seed(seed + subrank if seed is not None else None)
         #     env = Monitor(env,
-        #                 logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(rank)),
+        #                 logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
         #                 allow_early_resets=True, render=render)
 
     elif env_id == 'arm3d_task1':
@@ -136,8 +135,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
         env.goalPostitionTask1 = np.asarray(tmp_env.get_disc_position())
         env = Monitor(
             env,
-            logger.get_dir() and os.path.join(logger.get_dir(),
-                                                str(mpi_rank) + '.' + str(rank)),
+            logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
             allow_early_resets=True,
             render=render,
             play=play,
@@ -158,8 +156,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
 
         env = Monitor(
             env,
-            logger.get_dir() and os.path.join(logger.get_dir(),
-                                                str(mpi_rank) + '.' + str(rank)),
+            logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
             allow_early_resets=True,
             render=render,
             play=play,
@@ -180,8 +177,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
         env.seed(seed + subrank if seed is not None else None)
         env = Monitor(
             env,
-            logger.get_dir() and os.path.join(logger.get_dir(),
-                                                str(mpi_rank) + '.' + str(rank)),
+            logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
             allow_early_resets=True,
             render=render,
             play=play,
@@ -191,8 +187,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
         env.seed(seed + subrank if seed is not None else None)
         env = Monitor(
             env,
-            logger.get_dir() and os.path.join(logger.get_dir(),
-                                                str(mpi_rank) + '.' + str(rank)),
+            logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
             allow_early_resets=True,
             render=render,
             play=play,
