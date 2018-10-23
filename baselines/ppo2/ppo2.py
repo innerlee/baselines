@@ -16,6 +16,10 @@ from mpi4py import MPI
 from baselines.common.tf_util import initialize
 from baselines.common.mpi_util import sync_from_root
 
+import logging
+logging.basicConfig(filename='obs.log', level=logging.DEBUG, format="%(levelname)s:%(name)s:%(message)s")
+
+
 class Model(object):
     """
     We use this object to :
@@ -134,8 +138,40 @@ class Model(object):
         self.initial_state = act_model.initial_state
 
         self.save = functools.partial(save_variables, sess=sess)
-        self.load = functools.partial(load_variables, sess=sess)
+        # self.load = functools.partial(load_variables, sess=sess)
+        import joblib
+        def load_variables(load_path):
+            variables = tf.trainable_variables()
 
+            loaded_params = joblib.load(os.path.expanduser(load_path))
+            restores = []
+            if isinstance(loaded_params, list):
+                assert len(loaded_params) == len(variables), 'number of variables loaded mismatches len(variables)'
+                for d, v in zip(loaded_params, variables):
+                    try: restores.append(v.assign(d))
+                    except: pass
+            else:
+                for v in variables:
+                    try: restores.append(v.assign(loaded_params[v.name]))
+                    except: pass
+            sess.run(restores)
+            print('========== variables ' + str(len(variables)))
+            print('========== restores ' + str(len(restores)))
+        self.load = load_variables
+
+        # self.save = functools.partial(save_variables, sess=sess) will just save 12 variables not the total count 15
+        # so try the following func to fix the bug
+        # def save_variables(save_path, variables=None, sess=None):
+        #     sess = sess or get_session()
+        #     variables = variables or tf.trainable_variables()
+
+        #     ps = sess.run(variables)
+        #     save_dict = {v.name: value for v, value in zip(variables, ps)}
+        #     dirname = os.path.dirname(save_path)
+        #     if any(dirname):
+        #         os.makedirs(dirname, exist_ok=True)
+        #     joblib.dump(save_dict, save_path)
+    
         if MPI.COMM_WORLD.Get_rank() == 0:
             initialize()
         global_variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="")
@@ -176,9 +212,14 @@ class Runner(AbstractEnvRunner):
             # Take actions in env and look the results
             # Infos contains a ton of useful informations
             self.obs[:], rewards, self.dones, infos = self.env.step(actions)
+            # print(rewards)
+            # import pdb; pdb.set_trace()
+            #logging.debug(self.obs[:])
             for info in infos:
                 maybeepinfo = info.get('episode')
-                if maybeepinfo: epinfos.append(maybeepinfo)
+                if maybeepinfo: 
+                    # import pdb; pdb.set_trace()
+                    epinfos.append(maybeepinfo)
             mb_rewards.append(rewards)
         #batch of steps to batch of rollouts
         mb_obs = np.asarray(mb_obs, dtype=self.obs.dtype)
@@ -218,10 +259,10 @@ def constfn(val):
         return val
     return f
 
-def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2048, ent_coef=0.0, lr=3e-4,
-            vf_coef=0.5,  max_grad_norm=0.5, gamma=0.99, lam=0.95,
+def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2048, ent_coef=0.01, lr=3e-4,
+            vf_coef=0.5,  max_grad_norm=0.5, gamma=0.99, lam=0.95, render=False,
             log_interval=10, nminibatches=4, noptepochs=4, cliprange=0.2,
-            save_interval=0, load_path=None, **network_kwargs):
+            save_interval=50, load_path=None, **network_kwargs):
     '''
     Learn policy using PPO algorithm (https://arxiv.org/abs/1707.06347)
 
@@ -304,13 +345,13 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
                     max_grad_norm=max_grad_norm)
     model = make_model()
     if load_path is not None:
+        # import pdb; pdb.set_trace()
         model.load(load_path)
+        print("========== load from ", load_path)
     # Instantiate the runner object
     runner = Runner(env=env, model=model, nsteps=nsteps, gamma=gamma, lam=lam)
     if eval_env is not None:
         eval_runner = Runner(env = eval_env, model = model, nsteps = nsteps, gamma = gamma, lam= lam)
-
-
 
     epinfobuf = deque(maxlen=100)
     if eval_env is not None:
@@ -330,6 +371,12 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
         # Calculate the cliprange
         cliprangenow = cliprange(frac)
         # Get minibatch
+
+        # llx-vedio
+        # for too much IO consumption, the following method is replaced by play in run.py 
+        # if update%10 == 0 and env.record:
+        #     env.render = True
+
         obs, returns, masks, actions, values, neglogpacs, states, epinfos = runner.run() #pylint: disable=E0632
         if eval_env is not None:
             eval_obs, eval_returns, eval_masks, eval_actions, eval_values, eval_neglogpacs, eval_states, eval_epinfos = eval_runner.run() #pylint: disable=E0632
@@ -384,6 +431,8 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
             logger.logkv("total_timesteps", update*nbatch)
             logger.logkv("fps", fps)
             logger.logkv("explained_variance", float(ev))
+            # logging.debug('===================================',safemean([epinfo['r'] for epinfo in epinfobuf]))
+            # import pdb; pdb.set_trace()
             logger.logkv('eprewmean', safemean([epinfo['r'] for epinfo in epinfobuf]))
             logger.logkv('eplenmean', safemean([epinfo['l'] for epinfo in epinfobuf]))
             if eval_env is not None:
@@ -394,12 +443,20 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
                 logger.logkv(lossname, lossval)
             if MPI.COMM_WORLD.Get_rank() == 0:
                 logger.dumpkvs()
+
+        # import pdb; pdb.set_trace()
         if save_interval and (update % save_interval == 0 or update == 1) and logger.get_dir() and MPI.COMM_WORLD.Get_rank() == 0:
             checkdir = osp.join(logger.get_dir(), 'checkpoints')
             os.makedirs(checkdir, exist_ok=True)
             savepath = osp.join(checkdir, '%.5i'%update)
             print('Saving to', savepath)
             model.save(savepath)
+
+        # llx-vedio
+        # for too much IO consumption, the following method is replaced by play in run.py 
+        # reset render
+        # env.record = False
+
     return model
 # Avoid division error when calculate the mean (in our case if epinfo is empty returns np.nan, not return an error)
 def safemean(xs):

@@ -75,13 +75,21 @@ def train(args, extra_args):
         env=env,
         seed=seed,
         total_timesteps=total_timesteps,
+        log_interval=1,
+        load_path=args.load_path,
+        render=args.render,
         **alg_kwargs
     )
 
     return model, env
 
 
-def build_env(args):
+def build_env(args, mode="train"):
+    # @llx
+    if mode == 'play':
+        num_env = args.num_env_play
+    else : num_env = args.num_env
+
     ncpu = multiprocessing.cpu_count()
     if sys.platform == 'darwin': ncpu //= 2
     nenv = args.num_env or ncpu
@@ -103,17 +111,15 @@ def build_env(args):
             env = VecFrameStack(env, frame_stack_size)
 
     else:
-       config = tf.ConfigProto(allow_soft_placement=True,
-                               intra_op_parallelism_threads=1,
-                               inter_op_parallelism_threads=1)
-       config.gpu_options.allow_growth = True
-       get_session(config=config)
-
-       env = make_vec_env(env_id, env_type, args.num_env or 1, seed, reward_scale=args.reward_scale)
-
-       if env_type == 'mujoco':
-           env = VecNormalize(env)
-
+       get_session(tf.ConfigProto(allow_soft_placement=True,
+                                   intra_op_parallelism_threads=1,
+                                   inter_op_parallelism_threads=1))
+       env = make_vec_env(env_id, env_type, num_env or 1, seed, reward_scale=args.reward_scale, render=args.render,\
+            stepNumMax=args.stepNumMax, sparse1_dis=args.sparse1_dis, play=args.render,record=args.record,\
+            rewardModeForArm3d=args.rewardModeForArm3d, initStateForArm3dTask2=[0.56, 0.5, -1.5, -1.74429440, -0.6, -0.9, 1.75])
+       if env_type == 'mujoco' or 'arm3d':
+           if args.normalize:
+                env = VecNormalize(env)#, ret=False)
     return env
 
 
@@ -121,6 +127,11 @@ def get_env_type(env_id):
     if env_id in _game_envs.keys():
         env_type = env_id
         env_id = [g for g in _game_envs[env_type]][0]
+    # @llx s
+    elif 'arm3d' in env_id:
+        #['arm3d_task1', 'arm3d_task1', 'arm3d_task2', 'arm3d']
+        env_type = 'arm3d'
+    # @llx e
     else:
         env_type = None
         for g, e in _game_envs.items():
@@ -179,6 +190,18 @@ def parse_cmdline_kwargs(args):
     return {k: parse(v) for k,v in parse_unknown_args(args).items()}
 
 
+def getPath(basic_path, args, mode = 'save'):
+
+    if mode == 'load': num_env = args.load_num_env
+    else:  num_env = args.num_env
+    path = basic_path+'/'+ args.env+'_seed'+ str(args.seed)+'_' + args.network + '_' + str(num_env)+'envs_' + \
+            str(args.normalize)+'Normalizing_re ' + str(args.reward_scale) + '_' + args.rewardModeForArm3d +  '_steps ' +  str(args.stepNumMax) + args.ps
+    if args.rewardModeForArm3d == 'sparse1':
+        path +=  '_dis ' + str(args.sparse1_dis)
+    elif args.rewardModeForArm3d == 'sparse2':
+        # to do: add parameters for sparse2
+        pass
+    return path
 
 def main():
     # configure logger, disable logging in child MPI processes (with rank > 0)
@@ -189,7 +212,15 @@ def main():
 
     if MPI is None or MPI.COMM_WORLD.Get_rank() == 0:
         rank = 0
-        logger.configure()
+
+        if args.save_path != None:
+            logger.configure(getPath(args.save_path,args),format_strs=['stdout', 'log', 'csv','tensorboard'])
+        else:logger.configure()
+
+        if args.load_path != None:
+            checkdir = osp.join(getPath(args.load_path, args, mode='load'), 'checkpoints')
+            args.load_path = osp.join(checkdir, args.load_num)
+
     else:
         logger.configure(format_strs=[])
         rank = MPI.COMM_WORLD.Get_rank()
@@ -197,25 +228,28 @@ def main():
     model, env = train(args, extra_args)
     env.close()
 
-    if args.save_path is not None and rank == 0:
-        save_path = osp.expanduser(args.save_path)
-        model.save(save_path)
+    # if args.save_path is not None and rank == 0:
+    #     save_path = osp.expanduser(args.save_path)
+    #     model.save(save_path)
 
     if args.play:
         logger.log("Running trained model")
-        env = build_env(args)
+        import time
+        print(time.strftime( '%Y-%m-%d %X', time.localtime() ))
+        env = build_env(args, mode='play')
+        env.record = True
         obs = env.reset()
-        def initialize_placeholders(nlstm=128,**kwargs):
-            return np.zeros((args.num_env or 1, 2*nlstm)), np.zeros((1))
-        state, dones = initialize_placeholders(**extra_args)
+        state, dones = np.zeros((args.num_env_play)), np.zeros((args.num_env_play))
+
         while True:
+            # for cannot get action sapce
+            # actions = []
+            # for i in range(args.num_env_play):
+            #     action, _, state[i], _ = model.step(obs[i],S=state[i], M=dones[i])
+            #     actions.append(action)
             actions, _, state, _ = model.step(obs,S=state, M=dones)
             obs, _, done, _ = env.step(actions)
-            env.render()
             done = done.any() if isinstance(done, np.ndarray) else done
-
-            if done:
-                obs = env.reset()
 
         env.close()
 

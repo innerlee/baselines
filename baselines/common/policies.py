@@ -44,8 +44,11 @@ class PolicyWithValue(object):
         latent = tf.layers.flatten(latent)
 
         # Based on the action space, will select what probability distribution type
-        self.pdtype = make_pdtype(env.action_space)
-
+        # self.pdtype = make_pdtype(env.action_space)
+        # @llx arm3d not use the box in gym so I should do something directly
+        from gym import spaces
+        self.pdtype = make_pdtype(spaces.Box(low=-1.0, high=+1.0, shape=(env.action_space.shape[0],)))
+        # import pdb; pdb.set_trace()
         self.pd, self.pi = self.pdtype.pdfromlatent(latent, init_scale=0.01)
 
         # Take an action
@@ -53,7 +56,7 @@ class PolicyWithValue(object):
 
         # Calculate the neg log of our probability
         self.neglogp = self.pd.neglogp(self.action)
-        self.sess = sess or tf.get_default_session()
+        self.sess = sess
 
         if estimate_q:
             assert isinstance(env.action_space, gym.spaces.Discrete)
@@ -64,7 +67,7 @@ class PolicyWithValue(object):
             self.vf = self.vf[:,0]
 
     def _evaluate(self, variables, observation, **extra_feed):
-        sess = self.sess
+        sess = self.sess or tf.get_default_session()
         feed_dict = {self.X: adjust_shape(self.X, observation)}
         for inpt_name, data in extra_feed.items():
             if inpt_name in self.__dict__.keys():

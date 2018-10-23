@@ -46,7 +46,8 @@ def obs_space_info(obs_space):
     for key, box in subspaces.items():
         keys.append(key)
         shapes[key] = box.shape
-        dtypes[key] = box.dtype
+        # @llx
+        dtypes[key] = np.float32#box.dtype
     return keys, shapes, dtypes
 
 

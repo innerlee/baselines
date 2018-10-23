@@ -8,17 +8,23 @@ import csv
 import os.path as osp
 import json
 import numpy as np
+import pickle
+from baselines import logger
 
 class Monitor(Wrapper):
     EXT = "monitor.csv"
     f = None
 
-    def __init__(self, env, filename, allow_early_resets=False, reset_keywords=(), info_keywords=()):
+    def __init__(self, env, filename, allow_early_resets=False, render=False, record=False, play=False,reset_keywords=(), info_keywords=()):
+        self.render = render
+        self.record = record
+        self.record_timer = 0
+        self.play = play
         Wrapper.__init__(self, env=env)
         self.tstart = time.time()
         self.results_writer = ResultsWriter(
             filename,
-            header={"t_start": time.time(), 'env_id' : env.spec and env.spec.id},
+            #header={"t_start": time.time(), 'env_id' : env.spec and env.spec.id},
             extra_keys=reset_keywords + info_keywords
         )
         self.reset_keywords = reset_keywords
@@ -32,6 +38,9 @@ class Monitor(Wrapper):
         self.total_steps = 0
         self.current_reset_info = {} # extra info about the current episode, that was passed in during reset()
 
+        self.arm3dTask2 = None
+        self.frames = []
+
     def reset(self, **kwargs):
         self.reset_state()
         for k in self.reset_keywords:
@@ -39,7 +48,12 @@ class Monitor(Wrapper):
             if v is None:
                 raise ValueError('Expected you to pass kwarg %s into reset'%k)
             self.current_reset_info[k] = v
-        return self.env.reset(**kwargs)
+
+        if self.arm3dTask2 == True:
+            return self.env.reset(init_state=self.env.init_state, **kwargs)
+        else:
+            return self.env.reset(**kwargs)
+
 
     def reset_state(self):
         if not self.allow_early_resets and not self.needs_reset:
@@ -52,12 +66,27 @@ class Monitor(Wrapper):
         if self.needs_reset:
             raise RuntimeError("Tried to step environment that needs reset")
         ob, rew, done, info = self.env.step(action)
+        # print(self.env,rew)
         self.update(ob, rew, done, info)
+        if self.render:
+            self.env.render()
+
+        # Prevent too many records
+        # if self.record and self.record_timer%1==0:
+        #     # @llx
+        #     self.frames.append(self.env.render(mode='rgb_array', close=True))
+        #     pickle.dump(self.frames, open( logger.get_dir()+ "/" + str(self.env.envId) +".p", "wb" ) )
+        #     self.record_timer += 1
+            # if True in done:
+            #     exit(0)
+            # print(logger.get_dir()+ str(self.env.llxId) +".p")
+
         return (ob, rew, done, info)
 
     def update(self, ob, rew, done, info):
         self.rewards.append(rew)
         if done:
+            # print(np.asarray(self.rewards).sum())
             self.needs_reset = True
             eprew = sum(self.rewards)
             eplen = len(self.rewards)

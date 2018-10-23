@@ -19,11 +19,16 @@ def observation_placeholder(ob_space, batch_size=None, name='Ob'):
 
     tensorflow placeholder tensor
     '''
+    # print('======================')
+    # print(ob_space.dtype)
+    # @llx arm3d not use the box in gym so I should do something directly
+    # assert isinstance(ob_space, Discrete) or isinstance(ob_space, Box), \
+    #     'Can only deal with Discrete and Box observation spaces for now'
 
-    assert isinstance(ob_space, Discrete) or isinstance(ob_space, Box), \
-        'Can only deal with Discrete and Box observation spaces for now'
-
-    return tf.placeholder(shape=(batch_size,) + ob_space.shape, dtype=ob_space.dtype, name=name)
+    # return tf.placeholder(shape=(batch_size,) + ob_space.shape, dtype=ob_space.dtype, name=name)
+    import numpy as np
+    return tf.placeholder(shape=(batch_size,) + ob_space.shape, dtype=np.float32, name=name)
+    
 
 
 def observation_input(ob_space, batch_size=None, name='Ob'):
@@ -49,8 +54,10 @@ def encode_observation(ob_space, placeholder):
     if isinstance(ob_space, Discrete):
         return tf.to_float(tf.one_hot(placeholder, ob_space.n))
 
-    elif isinstance(ob_space, Box):
-        return tf.to_float(placeholder)
-    else:
-        raise NotImplementedError
+    # @llx arm3d not use the box in gym so I should do something directly
+    return tf.to_float(placeholder)
+    # elif isinstance(ob_space, Box):
+    #     return tf.to_float(placeholder)
+    # else:
+    #     raise NotImplementedError
 
