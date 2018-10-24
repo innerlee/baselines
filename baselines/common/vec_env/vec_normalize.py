@@ -21,6 +21,8 @@ class VecNormalize(VecEnvWrapper):
         self.ret = np.zeros(self.num_envs)
         self.gamma = gamma
         self.epsilon = epsilon
+        self.envId = self.venv.getEnvId
+        self.llx = 'test'
 
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()

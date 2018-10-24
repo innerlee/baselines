@@ -100,8 +100,8 @@ class VecEnv(ABC):
         return self.step_wait()
 
     def render(self, mode='human'):
-        imgs = self.get_images()
-        bigimg = tile_images(imgs)
+        imgs = self.get_images() # use subProc send render to arm3d env
+        bigimg = tile_images(imgs)      
         if mode == 'human':
             self.get_viewer().imshow(bigimg)
             return self.get_viewer().isopen

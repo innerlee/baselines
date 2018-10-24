@@ -17,12 +17,14 @@ def worker(remote, parent_remote, env_fn_wrapper):
                 ob = env.reset()
                 remote.send(ob)
             elif cmd == 'render':
-                remote.send(env.render(mode='rgb_array'))
+                remote.send(env.render(mode='rgb_array',close=True))
             elif cmd == 'close':
                 remote.close()
                 break
             elif cmd == 'get_spaces':
                 remote.send((env.observation_space, env.action_space))
+            elif cmd == 'getEnvId':
+                remote.send((env.env.envId))
             else:
                 raise NotImplementedError
     except KeyboardInterrupt:
@@ -97,3 +99,10 @@ class SubprocVecEnv(VecEnv):
 
     def _assert_not_closed(self):
         assert not self.closed, "Trying to operate on a SubprocVecEnv after calling close()"
+
+    def getEnvId(self):
+        self._assert_not_closed()
+        for pipe in self.remotes:
+            pipe.send(('getEnvId', None))
+        Ids = [pipe.recv() for pipe in self.remotes]
+        return Ids

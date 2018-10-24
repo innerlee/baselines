@@ -19,6 +19,8 @@ from baselines.common.mpi_util import sync_from_root
 import logging
 logging.basicConfig(filename='obs.log', level=logging.DEBUG, format="%(levelname)s:%(name)s:%(message)s")
 
+import pickle
+import cv2
 
 class Model(object):
     """
@@ -192,6 +194,15 @@ class Runner(AbstractEnvRunner):
         self.lam = lam
         # Discount rate
         self.gamma = gamma
+        self.record = False
+        import cv2
+        from gym.wrappers.monitoring.video_recorder import ImageEncoder
+        # import pdb; pdb.set_trace()
+        self.encoders = [ImageEncoder(output_path=osp.join(logger.get_dir()+ "/images2/" + 'arm3d_%d_env.mp4' % idx),frame_shape=(200, 300, 3),frames_per_sec=15) for idx in range(env.num_envs) ]
+        # import pdb; pdb.set_trace()
+
+    def to_img(self, obs, frame_size=(100, 100)):
+        return cv2.resize(np.cast['uint8'](obs), frame_size)
 
     def run(self):
         # Here, we init the lists that will contain the mb of experiences
@@ -212,6 +223,21 @@ class Runner(AbstractEnvRunner):
             # Take actions in env and look the results
             # Infos contains a ton of useful informations
             self.obs[:], rewards, self.dones, infos = self.env.step(actions)
+            # import pdb; pdb.set_trace()
+            # self.env.render()
+            # import pickle
+            if self.record and _%100==0:
+                # @llx
+                images = self.env.render(mode='rgb_array').reshape(2,200,300,3)
+                # import pdb; pdb.set_trace()
+                for index,name in enumerate(self.env.envId()): 
+                    compressed_image = self.to_img(images[index,:,:,:], frame_size=(300, 200))
+                    cv2.waitKey(10)
+                    self.encoders[name].capture_frame(compressed_image)
+                    # pickle.dump([images[:,:,index]], open( logger.get_dir()+ "/images/env" + str(name) +".p", "ab+" ) )
+                    # import pdb; pdb.set_trace()
+                    # np.save(open( logger.get_dir()+ "/images2/" + str(name) +".npy", "ab" ), images[:,:,index])
+                # print(logger.get_dir()+ str(self.env.llxId) +".p")
             # print(rewards)
             # import pdb; pdb.set_trace()
             #logging.debug(self.obs[:])
@@ -261,7 +287,7 @@ def constfn(val):
 
 def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2048, ent_coef=0.01, lr=3e-4,
             vf_coef=0.5,  max_grad_norm=0.5, gamma=0.99, lam=0.95, render=False,
-            log_interval=10, nminibatches=4, noptepochs=4, cliprange=0.2,
+            log_interval=10, nminibatches=4, noptepochs=4, cliprange=0.2,record=False,
             save_interval=50, load_path=None, **network_kwargs):
     '''
     Learn policy using PPO algorithm (https://arxiv.org/abs/1707.06347)
@@ -374,8 +400,8 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
 
         # llx-vedio
         # for too much IO consumption, the following method is replaced by play in run.py 
-        # if update%10 == 0 and env.record:
-        #     env.render = True
+        if update%5 == 0 and record:
+            runner.record = True
 
         obs, returns, masks, actions, values, neglogpacs, states, epinfos = runner.run() #pylint: disable=E0632
         if eval_env is not None:
@@ -455,7 +481,7 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
         # llx-vedio
         # for too much IO consumption, the following method is replaced by play in run.py 
         # reset render
-        # env.record = False
+        runner.record = False
 
     return model
 # Avoid division error when calculate the mean (in our case if epinfo is empty returns np.nan, not return an error)

@@ -5,8 +5,17 @@ cp ~/.mujoco/mjkey.txt ../rllab-curriculum/vendor/mujoco/
 source activate rllab_goal_rl
 # python testArm3d.py
 
-# test noise
-python -m baselines.run --render  --task2InitNoise 0.1 --ps _TfRunningMeanStd_ecoef0.00_removeTotalTask_removeNoise  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/test
+# 10.24
+
+
+# run 10.23 final
+# python -m baselines.run --task2InitNoise 0 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/1023Final
+# python -m baselines.run --task2InitNoise 0 --ps _TfRunningMeanStd --ent_coef 0.01  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/1023Final
+python -m baselines.run --record --task2InitNoise 0.1 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/test
+
+# run 10.23 
+# python -m baselines.run --render  --task2InitNoise 0.1 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/1023
+# python -m baselines.run --record  --task2InitNoise 0 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/test
 
 #10.23 
 # add self.task2InitNoise  in arm3d, so we should use --task2InitNoise to add noise to task2

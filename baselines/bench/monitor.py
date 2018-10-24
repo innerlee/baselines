@@ -16,9 +16,8 @@ class Monitor(Wrapper):
     f = None
 
     def __init__(self, env, filename, allow_early_resets=False, render=False, record=False, play=False,reset_keywords=(), info_keywords=()):
-        self.render = render
+        self.renderFlag = render#render
         self.record = record
-        self.record_timer = 0
         self.play = play
         Wrapper.__init__(self, env=env)
         self.tstart = time.time()
@@ -39,9 +38,9 @@ class Monitor(Wrapper):
         self.current_reset_info = {} # extra info about the current episode, that was passed in during reset()
 
         self.arm3dTask2 = None
-        self.frames = []
 
     def reset(self, **kwargs):
+        self.render = self.env.render
         self.reset_state()
         for k in self.reset_keywords:
             v = kwargs.get(k)
@@ -61,28 +60,27 @@ class Monitor(Wrapper):
         self.rewards = []
         self.needs_reset = False
 
-
+    def setRecord(self, record):
+        self.record = record
+        
     def step(self, action):
         if self.needs_reset:
             raise RuntimeError("Tried to step environment that needs reset")
         ob, rew, done, info = self.env.step(action)
         # print(self.env,rew)
         self.update(ob, rew, done, info)
-        if self.render:
-            self.env.render()
+        # self.env.render()
+        if self.renderFlag:
+            # self.env.render()
+            pass
 
-        # Prevent too many records
-        # if self.record and self.record_timer%1==0:
-        #     # @llx
-        #     self.frames.append(self.env.render(mode='rgb_array', close=True))
-        #     pickle.dump(self.frames, open( logger.get_dir()+ "/" + str(self.env.envId) +".p", "wb" ) )
-        #     self.record_timer += 1
-            # if True in done:
-            #     exit(0)
+        # if self.record:
+        #     np.save(open( logger.get_dir()+ "/images2/" + str(self.env.envId) +".npy", "ab+" ), self.env.render(mode='rgb_array', close=True) )
+            # @llx
+            # pickle.dump(self.env.render(mode='rgb_array', close=True), open( logger.get_dir()+ "/images/" + str(self.env.envId) +".p", "ab" ) )
             # print(logger.get_dir()+ str(self.env.llxId) +".p")
 
         return (ob, rew, done, info)
-
     def update(self, ob, rew, done, info):
         self.rewards.append(rew)
         if done:

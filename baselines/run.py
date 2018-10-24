@@ -79,6 +79,7 @@ def train(args, extra_args):
         load_path=args.load_path,
         render=args.render,
         ent_coef=args.ent_coef,
+        record=args.record,
         **alg_kwargs
     )
 
@@ -193,12 +194,15 @@ def getPath(basic_path, args, mode = 'save'):
     if mode == 'load': num_env = args.load_num_env
     else:  num_env = args.num_env
     path = basic_path+'/'+ args.env+'_seed'+ str(args.seed)+'_' + args.network + '_' + str(num_env)+'envs_' + \
-            str(args.normalize)+'Normalizing_re ' + str(args.reward_scale) + '_' + args.rewardModeForArm3d +  '_steps ' +  str(args.stepNumMax) + args.ps
+            str(args.normalize)+'Normalizing_re:' + str(args.reward_scale) + '_' + args.rewardModeForArm3d +  '_steps:' + \
+             str(args.stepNumMax) + '_entCoef:' + str(args.ent_coef) + args.ps
     if args.rewardModeForArm3d == 'sparse1':
-        path +=  '_dis ' + str(args.sparse1_dis)
+        path +=  '_dis:' + str(args.sparse1_dis)
     elif args.rewardModeForArm3d == 'sparse2':
         # to do: add parameters for sparse2
         pass
+    if args.task2InitNoise:
+        path +=  '_task2InitNoise:' + str(args.task2InitNoise)
     return path
 
 def main():
