@@ -100,13 +100,12 @@ class VecEnv(ABC):
         return self.step_wait()
 
     def render(self, mode='human'):
-        imgs = self.get_images() # use subProc send render to arm3d env
-        bigimg = tile_images(imgs)      
+        imgs = self.get_images() # use subProc send render to arm3d env  
         if mode == 'human':
-            self.get_viewer().imshow(bigimg)
+            self.get_viewer().imshow(tile_images(imgs, mode="render"))
             return self.get_viewer().isopen
         elif mode == 'rgb_array':
-            return bigimg
+            return tile_images(imgs, mode="rgb_array") 
         else:
             raise NotImplementedError
 

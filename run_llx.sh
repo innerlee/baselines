@@ -5,13 +5,37 @@ cp ~/.mujoco/mjkey.txt ../rllab-curriculum/vendor/mujoco/
 source activate rllab_goal_rl
 # python testArm3d.py
 
+# 10.25
+    # render four experiments for task2
+    # python -m baselines.run --record --task2InitNoise 0.0 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --num_env 4 --save_path ./result/1025_1
+    # python -m baselines.run --record --task2InitNoise 0.1 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --num_env 4 --save_path ./result/1025_1
+    # python -m baselines.run --record --task2InitNoise 0.2 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --num_env 4 --save_path ./result/1025_1
+    # python -m baselines.run --record --task2InitNoise 0.3 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --num_env 4 --save_path ./result/1025_1
+
+    # render fixed, run all the  rest of the experiments
+    # python -m baselines.run --record --task2InitNoise 0 --ps _TfRunningMeanStd_removeTotalTask --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
+    # python -m baselines.run --record --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
+    # python -m baselines.run --record --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 16 --save_path ./result/1024
+    # python -m baselines.run --record --task2InitNoise 0 --ps _TfRunningMeanStd --ent_coef 0.01  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
+    python -m baselines.run --record --task2InitNoise 0.1 --ps _TfRunningMeanStd_withTotalTask --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 9 --save_path ./result/1024
+    
+        
 # 10.24
+# python -m baselines.run --record --task2InitNoise 0 --ps _TfRunningMeanStd_removeTotalTask --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
+# python -m baselines.run --record --task2InitNoise 0.0 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
+# python -m baselines.run --record --task2InitNoise 0.1 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
+# python -m baselines.run --record --task2InitNoise 0.2 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
+# python -m baselines.run --record --task2InitNoise 0.3 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
+# python -m baselines.run --record --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
+# python -m baselines.run --record --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 16 --save_path ./result/1024
+# python -m baselines.run --record   --task2InitNoise 0 --ps _TfRunningMeanStd --ent_coef 0.01  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
+# python -m baselines.run --record --task2InitNoise 0.1 --ps _TfRunningMeanStd_withTotalTask --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 9 --save_path ./result/1024
 
 
 # run 10.23 final
 # python -m baselines.run --task2InitNoise 0 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/1023Final
 # python -m baselines.run --task2InitNoise 0 --ps _TfRunningMeanStd --ent_coef 0.01  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/1023Final
-python -m baselines.run --record --task2InitNoise 0.1 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/test
+# python -m baselines.run --record --task2InitNoise 0.1 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/test
 
 # run 10.23 
 # python -m baselines.run --render  --task2InitNoise 0.1 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 2 --save_path ./result/1023

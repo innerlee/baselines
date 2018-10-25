@@ -21,6 +21,7 @@ logging.basicConfig(filename='obs.log', level=logging.DEBUG, format="%(levelname
 
 import pickle
 import cv2
+from gym.wrappers.monitoring.video_recorder import ImageEncoder
 
 class Model(object):
     """
@@ -198,7 +199,8 @@ class Runner(AbstractEnvRunner):
         import cv2
         from gym.wrappers.monitoring.video_recorder import ImageEncoder
         # import pdb; pdb.set_trace()
-        self.encoders = [ImageEncoder(output_path=osp.join(logger.get_dir()+ "/images2/" + 'arm3d_%d_env.mp4' % idx),frame_shape=(200, 300, 3),frames_per_sec=15) for idx in range(env.num_envs) ]
+        # self.encoders = [ImageEncoder(output_path=osp.join(logger.get_dir(), 'arm3d_%d_env.mp4' % idx),frame_shape=(200, 300, 3),frames_per_sec=15) for idx in range(env.num_envs) ]
+        self.encoders = None
         # import pdb; pdb.set_trace()
 
     def to_img(self, obs, frame_size=(100, 100)):
@@ -227,13 +229,21 @@ class Runner(AbstractEnvRunner):
             # self.env.render()
             # import pickle
             if self.record and _%100==0:
+                images = self.env.render(mode='rgb_array')
+                if self.encoders == None:
+                    self.encoders = ImageEncoder(output_path=osp.join(logger.get_dir(), 'arm3d_env.mp4'),frame_shape=images.shape,frames_per_sec=15) 
+                
+                compressed_image = self.to_img(images, frame_size=images.shape[:-1][::-1])
+                cv2.waitKey(10)
+                self.encoders.capture_frame(compressed_image)
+
                 # @llx
-                images = self.env.render(mode='rgb_array').reshape(2,200,300,3)
-                # import pdb; pdb.set_trace()
-                for index,name in enumerate(self.env.envId()): 
-                    compressed_image = self.to_img(images[index,:,:,:], frame_size=(300, 200))
-                    cv2.waitKey(10)
-                    self.encoders[name].capture_frame(compressed_image)
+                # images = self.env.render(mode='rgb_array').reshape(self.env.num_envs,200,300,3)
+                # # import pdb; pdb.set_trace()
+                # for index,name in enumerate(self.env.envId()): 
+                #     compressed_image = self.to_img(images[index,:,:,:], frame_size=(300, 200))
+                #     cv2.waitKey(10)
+                #     self.encoders[name].capture_frame(compressed_image)
                     # pickle.dump([images[:,:,index]], open( logger.get_dir()+ "/images/env" + str(name) +".p", "ab+" ) )
                     # import pdb; pdb.set_trace()
                     # np.save(open( logger.get_dir()+ "/images2/" + str(name) +".npy", "ab" ), images[:,:,index])
@@ -400,7 +410,7 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
 
         # llx-vedio
         # for too much IO consumption, the following method is replaced by play in run.py 
-        if update%5 == 0 and record:
+        if update%10 == 0 and record:
             runner.record = True
 
         obs, returns, masks, actions, values, neglogpacs, states, epinfos = runner.run() #pylint: disable=E0632
