@@ -15,9 +15,7 @@ class Monitor(Wrapper):
     EXT = "monitor.csv"
     f = None
 
-    def __init__(self, env, filename, allow_early_resets=False, render=False, record=False, play=False,reset_keywords=(), info_keywords=()):
-        self.renderFlag = render#render
-        self.record = record
+    def __init__(self, env, filename, allow_early_resets=False, play=False,reset_keywords=(), info_keywords=()):
         self.play = play
         Wrapper.__init__(self, env=env)
         self.tstart = time.time()
@@ -67,18 +65,7 @@ class Monitor(Wrapper):
         if self.needs_reset:
             raise RuntimeError("Tried to step environment that needs reset")
         ob, rew, done, info = self.env.step(action)
-        # print(self.env,rew)
         self.update(ob, rew, done, info)
-        # self.env.render()
-        if self.renderFlag:
-            # self.env.render()
-            pass
-
-        # if self.record:
-        #     np.save(open( logger.get_dir()+ "/images2/" + str(self.env.envId) +".npy", "ab+" ), self.env.render(mode='rgb_array', close=True) )
-            # @llx
-            # pickle.dump(self.env.render(mode='rgb_array', close=True), open( logger.get_dir()+ "/images/" + str(self.env.envId) +".p", "ab" ) )
-            # print(logger.get_dir()+ str(self.env.llxId) +".p")
 
         return (ob, rew, done, info)
     def update(self, ob, rew, done, info):

@@ -79,9 +79,8 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
                 env,
                 logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
                 allow_early_resets=True,
-                render=render,
-                play=play,
-                record=record)
+                play=play)
+
         elif indexTasks % 2 == 1:
             env = Arm3dDiscEnvllx(stepNumMax=stepNumMax, sparse1_dis=sparse1_dis, task2InitNoise=task2InitNoise)
             env.envId = envsIndex
@@ -99,9 +98,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
                 env,
                 logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
                 allow_early_resets=True,
-                render=render,
-                play=play,
-                record=record)
+                play=play)
             env.arm3dTask2 = True
 
         # else:
@@ -135,12 +132,10 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
         tmp_env.reset(init_state=initStateForArm3dTask2)
         env.goalPostitionTask1 = np.asarray(tmp_env.get_disc_position())
         env = Monitor(
-            env,
-            logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
-            allow_early_resets=True,
-            render=render,
-            play=play,
-            record=record)
+                env,
+                logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
+                allow_early_resets=True,
+                play=play)
 
     elif env_id == 'arm3d_task2':
         env = Arm3dDiscEnvllx(stepNumMax=stepNumMax * 2, sparse1_dis=sparse1_dis, task2InitNoise=task2InitNoise)
@@ -156,12 +151,10 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
         env.seed(seed + subrank if seed is not None else None)
 
         env = Monitor(
-            env,
-            logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
-            allow_early_resets=True,
-            render=render,
-            play=play,
-            record=record)
+                env,
+                logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
+                allow_early_resets=True,
+                play=play)
 
         env.arm3dTask2 = True
 
@@ -176,23 +169,20 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
         env._configured = None
         env.spec.id = 99
         env.seed(seed + subrank if seed is not None else None)
+
         env = Monitor(
-            env,
-            logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
-            allow_early_resets=True,
-            render=render,
-            play=play,
-            record=record)
+                env,
+                logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
+                allow_early_resets=True,
+                play=play)
     else:
         env = make_atari(env_id) if env_type == 'atari' else gym.make(env_id)
         env.seed(seed + subrank if seed is not None else None)
         env = Monitor(
-            env,
-            logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
-            allow_early_resets=True,
-            render=render,
-            play=play,
-            record=record)
+                env,
+                logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
+                allow_early_resets=True,
+                play=play)
 
     if env_type == 'atari': return wrap_deepmind(env, **wrapper_kwargs)
     elif reward_scale != 1: return retro_wrappers.RewardScaler(env, reward_scale)

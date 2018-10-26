@@ -205,7 +205,7 @@ class Runner(AbstractEnvRunner):
     run():
     - Make a mini batch
     """
-    def __init__(self, *, env, model, nsteps, gamma, lam):
+    def __init__(self, *, env, model, nsteps, gamma, lam,render):
         super().__init__(env=env, model=model, nsteps=nsteps)
         # Lambda used in GAE (General Advantage Estimation)
         self.lam = lam
@@ -217,6 +217,7 @@ class Runner(AbstractEnvRunner):
         # import pdb; pdb.set_trace()
         # self.encoders = [ImageEncoder(output_path=osp.join(logger.get_dir(), 'arm3d_%d_env.mp4' % idx),frame_shape=(200, 300, 3),frames_per_sec=15) for idx in range(env.num_envs) ]
         self.encoders = None
+        self.render = render
         # import pdb; pdb.set_trace()
 
     def to_img(self, obs, frame_size=(100, 100)):
@@ -242,8 +243,10 @@ class Runner(AbstractEnvRunner):
             # Infos contains a ton of useful informations
             self.obs[:], rewards, self.dones, infos = self.env.step(actions)
             # import pdb; pdb.set_trace()
-            # self.env.render()
-            # import pickle
+
+            if self.render:
+                self.env.render()
+            
             if self.record and _%100==0:
                 images = self.env.render(mode='rgb_array')
                 if self.encoders == None:
@@ -402,9 +405,9 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
         print("========== load from ", load_path)
         # import pdb; pdb.set_trace()
     # Instantiate the runner object
-    runner = Runner(env=env, model=model, nsteps=nsteps, gamma=gamma, lam=lam)
+    runner = Runner(env=env, model=model, nsteps=nsteps, gamma=gamma, lam=lam, render=render)
     if eval_env is not None:
-        eval_runner = Runner(env = eval_env, model = model, nsteps = nsteps, gamma = gamma, lam= lam)
+        eval_runner = Runner(env = eval_env, model = model, nsteps = nsteps, gamma = gamma, lam= lam, render=render)
 
     epinfobuf = deque(maxlen=100)
     if eval_env is not None:
@@ -510,7 +513,7 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
 
         # llx-vedio
         # for too much IO consumption, the following method is replaced by play in run.py 
-        # reset render
+        # reset record
         runner.record = False
 
     return model
