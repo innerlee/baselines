@@ -15,8 +15,9 @@ class Monitor(Wrapper):
     EXT = "monitor.csv"
     f = None
 
-    def __init__(self, env, filename, allow_early_resets=False, play=False,reset_keywords=(), info_keywords=()):
-        self.play = play
+    def __init__(self, env, filename, allow_early_resets=False, render=False, play=False,reset_keywords=(), info_keywords=()):
+        self.renderFlag = render#render
+        # self.play = play
         Wrapper.__init__(self, env=env)
         self.tstart = time.time()
         self.results_writer = ResultsWriter(
@@ -36,9 +37,10 @@ class Monitor(Wrapper):
         self.current_reset_info = {} # extra info about the current episode, that was passed in during reset()
 
         self.arm3dTask2 = None
+        # for env.render() in PPO
+        self.render = self.env.render
 
     def reset(self, **kwargs):
-        self.render = self.env.render
         self.reset_state()
         for k in self.reset_keywords:
             v = kwargs.get(k)
@@ -57,15 +59,15 @@ class Monitor(Wrapper):
             raise RuntimeError("Tried to reset an environment before done. If you want to allow early resets, wrap your env with Monitor(env, path, allow_early_resets=True)")
         self.rewards = []
         self.needs_reset = False
-
-    def setRecord(self, record):
-        self.record = record
         
     def step(self, action):
         if self.needs_reset:
             raise RuntimeError("Tried to step environment that needs reset")
         ob, rew, done, info = self.env.step(action)
         self.update(ob, rew, done, info)
+
+        if self.renderFlag:
+            self.env.render()
 
         return (ob, rew, done, info)
     def update(self, ob, rew, done, info):

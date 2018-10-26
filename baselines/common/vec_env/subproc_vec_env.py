@@ -17,7 +17,7 @@ def worker(remote, parent_remote, env_fn_wrapper):
                 ob = env.reset()
                 remote.send(ob)
             elif cmd == 'render':
-                remote.send(env.render(mode='rgb_array',close=True))
+                remote.send(env.render(mode='rgb_array', close=True))
             elif cmd == 'close':
                 remote.close()
                 break

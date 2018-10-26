@@ -105,6 +105,9 @@ class VecEnv(ABC):
             self.get_viewer().imshow(tile_images(imgs))
             return self.get_viewer().isopen
         elif mode == 'rgb_array':
+            # for record for multiple in PPO
+            if self.renderMode == "multiple":
+                return imgs
             return tile_images(imgs) 
         else:
             raise NotImplementedError

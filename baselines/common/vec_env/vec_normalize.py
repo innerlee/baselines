@@ -22,7 +22,7 @@ class VecNormalize(VecEnvWrapper):
         self.gamma = gamma
         self.epsilon = epsilon
         self.envId = self.venv.getEnvId
-        self.llx = 'test'
+        self.env = venv
 
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()

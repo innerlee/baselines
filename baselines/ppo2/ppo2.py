@@ -209,6 +209,7 @@ class Runner(AbstractEnvRunner):
         super().__init__(env=env, model=model, nsteps=nsteps)
         # Lambda used in GAE (General Advantage Estimation)
         self.lam = lam
+        # self.env = env
         # Discount rate
         self.gamma = gamma
         self.record = False
@@ -242,20 +243,30 @@ class Runner(AbstractEnvRunner):
             # Take actions in env and look the results
             # Infos contains a ton of useful informations
             self.obs[:], rewards, self.dones, infos = self.env.step(actions)
-            # import pdb; pdb.set_trace()
-
+    
             if self.render:
                 self.env.render()
-            
+
             if self.record and _%100==0:
                 images = self.env.render(mode='rgb_array')
-                if self.encoders == None:
-                    self.encoders = ImageEncoder(output_path=osp.join(logger.get_dir(), 'arm3d_env.mp4'),frame_shape=images.shape, frames_per_sec=15) 
-                
-                compressed_image = self.to_img(images, frame_size=images.shape[:-1][::-1])
-                cv2.waitKey(10)
-                self.encoders.capture_frame(compressed_image)
 
+                if self.env.renderMode == 'multiple' and self.env.num_envs > 1:
+                    if self.encoders == None:
+                        self.encoders = [ImageEncoder(output_path=osp.join(logger.get_dir(), 'arm3d_%d_env.mp4' % idx),frame_shape=images[idx].shape,frames_per_sec=15) for idx in range(self.env.num_envs) ]
+                    
+                    for index,name in enumerate(self.env.envId()): 
+                        compressed_image = self.to_img(images[index], frame_size=images[index].shape[:-1][::-1])
+                        cv2.waitKey(10)
+                        self.encoders[name].capture_frame(compressed_image)
+                elif self.env.renderMode == 'single':
+                    if self.encoders == None:
+                        self.encoders = ImageEncoder(output_path=osp.join(logger.get_dir(), 'arm3d_env.mp4'),frame_shape=images.shape, frames_per_sec=15) 
+                    
+                    compressed_image = self.to_img(images, frame_size=images.shape[:-1][::-1])
+                    cv2.waitKey(10)
+                    self.encoders.capture_frame(compressed_image)
+                else:
+                    print("Error: unknow render mode")
                 # @llx
                 # images = self.env.render(mode='rgb_array').reshape(self.env.num_envs,200,300,3)
                 # # import pdb; pdb.set_trace()
@@ -430,7 +441,7 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
 
         # llx-vedio
         # for too much IO consumption, the following method is replaced by play in run.py 
-        if update%10 == 0 and record:
+        if update%1 == 0 and record:
             runner.record = True
 
         obs, returns, masks, actions, values, neglogpacs, states, epinfos = runner.run() #pylint: disable=E0632

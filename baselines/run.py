@@ -62,6 +62,9 @@ def train(args, extra_args):
     alg_kwargs.update(extra_args)
 
     env = build_env(args)
+    # env.renderMode for record in PPO and render in subproc_vec_env
+    # env.env.renderMode for recorfing record mode multiple
+    env.env.renderMode = env.renderMode = args.renderMode
 
     if args.network:
         alg_kwargs['network'] = args.network
@@ -70,16 +73,26 @@ def train(args, extra_args):
             alg_kwargs['network'] = get_default_network(env_type)
 
     print('Training {} on {}:{} with arguments \n{}'.format(args.alg, env_type, env_id, alg_kwargs))
-
+    
+    if args.renderMode == 'single' and args.render:
+        render = True
+    else : render = False 
+    # the code segmentation above is equal with the following code segmentation
+    # if args.render == True:
+    #     if args.renderMode == "multiple":
+    #         render = False
+    #     elif args.renderMode == 'single':
+    #         render = True
+    # else : render = False
     model = learn(
         env=env,
         seed=seed,
         total_timesteps=total_timesteps,
         log_interval=1,
         load_path=args.load_path,
-        render=args.render,
+        render=render,
+        record = args.record,
         ent_coef=args.ent_coef,
-        record=args.record,
         **alg_kwargs
     )
 
@@ -111,12 +124,26 @@ def build_env(args, mode="train"):
             env = make_vec_env(env_id, env_type, nenv, seed, gamestate=args.gamestate, reward_scale=args.reward_scale)
             env = VecFrameStack(env, frame_stack_size)
 
+
+
+
     else:
        get_session(tf.ConfigProto(allow_soft_placement=True,
                                    intra_op_parallelism_threads=1,
                                    inter_op_parallelism_threads=1))
-       env = make_vec_env(env_id, env_type, num_env or 1, seed, reward_scale=args.reward_scale, render=args.render,\
-            stepNumMax=args.stepNumMax, sparse1_dis=args.sparse1_dis, play=args.render,record=args.record,task2InitNoise=args.task2InitNoise,\
+       if args.renderMode == 'multiple' and args.render:
+            render = True
+       else : render = False 
+    #    import pdb;pdb.set_trace()
+       # the code segmentation above is equal with the following code segmentation
+    #    if args.render == True:
+    #         if args.renderMode == "multiple":
+    #             render = True
+    #         elif args.renderMode == 'single':
+    #             render = False
+    #    else : render = False
+       env = make_vec_env(env_id, env_type, num_env or 1, seed, reward_scale=args.reward_scale, render=render,\
+            stepNumMax=args.stepNumMax, sparse1_dis=args.sparse1_dis, task2InitNoise=args.task2InitNoise,\
             rewardModeForArm3d=args.rewardModeForArm3d, initStateForArm3dTask2=[0.56, 0.5, -1.5, -1.74429440, -0.6, -0.9, 1.75])
        if env_type == 'mujoco' or 'arm3d':
            if args.normalize:
