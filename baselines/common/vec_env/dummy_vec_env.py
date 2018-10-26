@@ -28,6 +28,9 @@ class DummyVecEnv(VecEnv):
         self.buf_infos = [{} for _ in range(self.num_envs)]
         self.actions = None
 
+    def getEnvId(self):
+        return self.env.getEnvId()
+
     def step_async(self, actions):
         listify = True
         try:

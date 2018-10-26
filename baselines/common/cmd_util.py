@@ -59,7 +59,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
                  indexTasks=None,stepNumMax = 300,sparse1_dis=0.1, rewardModeForArm3d=None, initStateForArm3dTask2=None, task2InitNoise=False):
     mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
     if env_id == 'arm3d_task12':
-        if indexTasks % 3 == 0:
+        if indexTasks % 2 == 0:
             env = Arm3dDiscEnvllx(envIdLLX=1, stepNumMax=stepNumMax, sparse1_dis=sparse1_dis)
             env.envId = envsIndex
 
@@ -82,7 +82,7 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
                 render=render,
                 play=play,
                 record=record)
-        elif indexTasks % 3 == 1:
+        elif indexTasks % 2 == 1:
             env = Arm3dDiscEnvllx(stepNumMax=stepNumMax, sparse1_dis=sparse1_dis, task2InitNoise=task2InitNoise)
             env.envId = envsIndex
 
@@ -104,20 +104,20 @@ def make_env(env_id,  env_type, envsIndex=0,subrank=0, seed=None, reward_scale=1
                 record=record)
             env.arm3dTask2 = True
 
-        else:
-            env = Arm3dDiscEnvllx(stepNumMax=stepNumMax,sparse1_dis=sparse1_dis)
-            env.envId = envsIndex
+        # else:
+        #     env = Arm3dDiscEnvllx(stepNumMax=stepNumMax,sparse1_dis=sparse1_dis)
+        #     env.envId = envsIndex
 
-            env.rewardMode = rewardModeForArm3d
-            env.reward_range=[0.1, 0.9]
-            env.metadata = {'render.modes': []}
-            env.unwrapped = None
-            env._configured = None
-            env.spec.id = 99
-            env.seed(seed + subrank if seed is not None else None)
-            env = Monitor(env,
-                        logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
-                        allow_early_resets=True, render=render)
+        #     env.rewardMode = rewardModeForArm3d
+        #     env.reward_range=[0.1, 0.9]
+        #     env.metadata = {'render.modes': []}
+        #     env.unwrapped = None
+        #     env._configured = None
+        #     env.spec.id = 99
+        #     env.seed(seed + subrank if seed is not None else None)
+        #     env = Monitor(env,
+        #                 logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
+        #                 allow_early_resets=True, render=render)
 
     elif env_id == 'arm3d_task1':
         env = Arm3dDiscEnvllx(envIdLLX=1, stepNumMax=stepNumMax, sparse1_dis=sparse1_dis, task2InitNoise=task2InitNoise)

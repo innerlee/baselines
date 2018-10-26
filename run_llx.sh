@@ -6,6 +6,59 @@ source activate rllab_goal_rl
 # python testArm3d.py
 
 # 10.25
+
+    # test code can run
+    python -m baselines.run --render --record --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 2 --save_path ./result/test
+
+    # # run tasks 1026Experiments 
+    #     # task 1
+    #         # sparse with different distance
+            # python -m baselines.run --record  --rewardModeForArm3d sparse1 --sparse1_dis 0.1 --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 2 --save_path ./result/1026Experiments   
+            # python -m baselines.run --record  --rewardModeForArm3d sparse1 --sparse1_dis 0.2 --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 2 --save_path ./result/1026Experiments   
+            # python -m baselines.run --record  --rewardModeForArm3d sparse1 --sparse1_dis 0.3 --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 2 --save_path ./result/1026Experiments   
+    #         # density
+            # python -m baselines.run --record --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 2 --save_path ./result/1026Experiments   
+    #     # task 12    
+    #         # with total task
+    #             # sparse
+                # python -m baselines.run --record  --rewardModeForArm3d sparse1 --sparse1_dis 0.1 --ps _TfRunningMeanStd_TF_adam_withTotal --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 3 --save_path ./result/1026Experiments   
+    #             # density
+                # python -m baselines.run --record  --ps _TfRunningMeanStd_TF_adam_withTotal --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 3 --save_path ./result/1026Experiments   
+              # without total task
+    #         # !!! change cmd_util env mode about task12
+    #             # sparse
+                # python -m baselines.run --record  --rewardModeForArm3d sparse1 --sparse1_dis 0.1 --ps _TfRunningMeanStd_TF_adam_withoutTotal --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 2 --save_path ./result/1026Experiments   
+    #             # density
+                # python -m baselines.run --record  --ps _TfRunningMeanStd_TF_adam_withoutTotal --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 2 --save_path ./result/1026Experiments   
+        
+    # test sparse for task2 and save fix 2
+    # python -m baselines.run --record  --rewardModeForArm3d sparse1 --sparse1_dis 0.1 --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 2 --save_path ./result/1026_task2
+
+    # test sparse
+    # python -m baselines.run --record  --rewardModeForArm3d sparse1 --sparse1_dis 0.1 --task2InitNoise 0.0 --ps _TfRunningMeanStd --ent_coef 0.00 --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=1228800 --seed 0 --num_env 2 --save_path ./result/1026_task2
+
+    # test after fix save
+    # python -m baselines.run --record --task2InitNoise 0.0 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --num_env 4 --save_path ./result/1025_fixSave
+
+    # Test load & save
+    # python -m baselines.run --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_RMSProp --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --num_env 2 --save_path ./result/testSave
+    # python -m baselines.run --load_num_env 2 --load_num 00002 --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_RMSProp --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --load_num_env 2  --load_path ./result/testSave
+
+    # success 
+        # python -m baselines.run --load_num_env 2 --load_num 00002 --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_sgd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --load_num_env 2  --load_path ./result/testSave
+        # python -m baselines.run  --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_sgd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --num_env 2  --save_path ./result/testSave
+    # python -m baselines.run --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --num_env 2 --save_path ./result/testSave
+    # python -m baselines.run --load_num_env 2 --load_num 00002 --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --load_num_env 2 --load_path ./result/testSave
+    # python -m baselines.run --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_sgd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --load_num_env 2 --save_path ./result/testSave
+    # python -m baselines.run --load_num_env 2 --load_num 00002 --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --load_num_env 2 --load_path ./result/testSave
+    # python -m baselines.run --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --load_num_env 2 --save_path ./result/testSave
+    # python -m baselines.run --load_num_env 2 --load_num 00002 --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_version_1.6 --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --load_num_env 2 --load_path ./result/testSave
+    # python -m baselines.run --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_version_1.6 --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --load_num_env 2 --save_path ./result/testSave
+    # python -m baselines.run --load_num_env 2 --load_num 00002 --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_version --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --load_num_env 2 --load_path ./result/testSave
+    # python -m baselines.run --task2InitNoise 0.0 --ps _TfRunningMeanStd_TF_version --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --load_num_env 2 --save_path ./result/testSave
+    # python -m baselines.run --load_num_env 2 --load_num 00010 --record --task2InitNoise 0.0 --ps _TfRunningMeanStd_4 --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --load_num_env 2 --load_path ./result/testSave
+    # python -m baselines.run --record --task2InitNoise 0.0 --ps _TfRunningMeanStd_4 --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --num_env 2 --save_path ./result/testSave
+
     # render four experiments for task2
     # python -m baselines.run --record --task2InitNoise 0.0 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --num_env 4 --save_path ./result/1025_1
     # python -m baselines.run --record --task2InitNoise 0.1 --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task2 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=12288000 --seed 0 --num_env 4 --save_path ./result/1025_1
@@ -17,7 +70,7 @@ source activate rllab_goal_rl
     # python -m baselines.run --record --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
     # python -m baselines.run --record --ps _TfRunningMeanStd --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 16 --save_path ./result/1024
     # python -m baselines.run --record --task2InitNoise 0 --ps _TfRunningMeanStd --ent_coef 0.01  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 6 --save_path ./result/1024
-    python -m baselines.run --record --task2InitNoise 0.1 --ps _TfRunningMeanStd_withTotalTask --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 9 --save_path ./result/1024
+    # python -m baselines.run --record --task2InitNoise 0.1 --ps _TfRunningMeanStd_withTotalTask --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=4e7 --seed 0 --num_env 9 --save_path ./result/1024
     
         
 # 10.24

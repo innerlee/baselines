@@ -39,7 +39,7 @@ class Model(object):
     def __init__(self, *, policy, ob_space, ac_space, nbatch_act, nbatch_train,
                 nsteps, ent_coef, vf_coef, max_grad_norm):
         sess = get_session()
-
+        self.sess = sess
         with tf.variable_scope('ppo2_model', reuse=tf.AUTO_REUSE):
             # CREATE OUR TWO MODELS
             # act_model that is used for sampling
@@ -100,7 +100,11 @@ class Model(object):
         # 1. Get the model parameters
         params = tf.trainable_variables('ppo2_model')
         # 2. Build our trainer
-        trainer = MpiAdamOptimizer(MPI.COMM_WORLD, learning_rate=LR, epsilon=1e-5)
+        # trainer = MpiAdamOptimizer(MPI.COMM_WORLD, learning_rate=LR, epsilon=1e-5)
+        # import pdb; pdb.set_trace()
+        trainer = tf.train.AdamOptimizer(learning_rate=LR, epsilon=1e-5)
+        # trainer = tf.train.GradientDescentOptimizer(learning_rate=LR)
+        # trainer = tf.train.RMSPropOptimizer(learning_rate=LR)
         # 3. Calculate the gradients
         grads_and_var = trainer.compute_gradients(loss, params)
         grads, var = zip(*grads_and_var)
@@ -140,26 +144,38 @@ class Model(object):
         self.value = act_model.value
         self.initial_state = act_model.initial_state
 
-        self.save = functools.partial(save_variables, sess=sess)
+        # self.save = functools.partial(save_variables, sess=sess)
         # self.load = functools.partial(load_variables, sess=sess)
         import joblib
+
+        def save_variables(save_path, variables=None, sess=None):
+            sess = self.sess #sess or get_session()
+            variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="")#variables or tf.trainable_variables()
+            # import pdb;pdb.set_trace()
+
+            ps = sess.run(variables)
+            save_dict = {v.name: value for v, value in zip(variables, ps)}
+            dirname = os.path.dirname(save_path)
+            if any(dirname):
+                os.makedirs(dirname, exist_ok=True)
+            joblib.dump(save_dict, save_path)
+
         def load_variables(load_path):
-            variables = tf.trainable_variables()
+            variables =  tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="")#tf.trainable_variables()
 
             loaded_params = joblib.load(os.path.expanduser(load_path))
             restores = []
             if isinstance(loaded_params, list):
                 assert len(loaded_params) == len(variables), 'number of variables loaded mismatches len(variables)'
                 for d, v in zip(loaded_params, variables):
-                    try: restores.append(v.assign(d))
-                    except: pass
+                    restores.append(v.assign(d))
             else:
                 for v in variables:
-                    try: restores.append(v.assign(loaded_params[v.name]))
-                    except: pass
+                    restores.append(v.assign(loaded_params[v.name]))
             sess.run(restores)
             print('========== variables ' + str(len(variables)))
             print('========== restores ' + str(len(restores)))
+        self.save = save_variables
         self.load = load_variables
 
         # self.save = functools.partial(save_variables, sess=sess) will just save 12 variables not the total count 15
@@ -231,7 +247,7 @@ class Runner(AbstractEnvRunner):
             if self.record and _%100==0:
                 images = self.env.render(mode='rgb_array')
                 if self.encoders == None:
-                    self.encoders = ImageEncoder(output_path=osp.join(logger.get_dir(), 'arm3d_env.mp4'),frame_shape=images.shape,frames_per_sec=15) 
+                    self.encoders = ImageEncoder(output_path=osp.join(logger.get_dir(), 'arm3d_env.mp4'),frame_shape=images.shape, frames_per_sec=15) 
                 
                 compressed_image = self.to_img(images, frame_size=images.shape[:-1][::-1])
                 cv2.waitKey(10)
@@ -384,6 +400,7 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
         # import pdb; pdb.set_trace()
         model.load(load_path)
         print("========== load from ", load_path)
+        # import pdb; pdb.set_trace()
     # Instantiate the runner object
     runner = Runner(env=env, model=model, nsteps=nsteps, gamma=gamma, lam=lam)
     if eval_env is not None:
@@ -482,11 +499,14 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
 
         # import pdb; pdb.set_trace()
         if save_interval and (update % save_interval == 0 or update == 1) and logger.get_dir() and MPI.COMM_WORLD.Get_rank() == 0:
+        # if update == 2:
             checkdir = osp.join(logger.get_dir(), 'checkpoints')
             os.makedirs(checkdir, exist_ok=True)
             savepath = osp.join(checkdir, '%.5i'%update)
             print('Saving to', savepath)
             model.save(savepath)
+            # import pdb;pdb.set_trace()
+            # exit(0)
 
         # llx-vedio
         # for too much IO consumption, the following method is replaced by play in run.py 
