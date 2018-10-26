@@ -205,7 +205,7 @@ class Runner(AbstractEnvRunner):
     run():
     - Make a mini batch
     """
-    def __init__(self, *, env, model, nsteps, gamma, lam,render):
+    def __init__(self, *, env, model, nsteps, gamma, lam,render, interval_RecordSteps=100, interval_VedioTimer=10):
         super().__init__(env=env, model=model, nsteps=nsteps)
         # Lambda used in GAE (General Advantage Estimation)
         self.lam = lam
@@ -219,6 +219,10 @@ class Runner(AbstractEnvRunner):
         # self.encoders = [ImageEncoder(output_path=osp.join(logger.get_dir(), 'arm3d_%d_env.mp4' % idx),frame_shape=(200, 300, 3),frames_per_sec=15) for idx in range(env.num_envs) ]
         self.encoders = None
         self.render = render
+        self.vedioTimer = 0
+        self.interval_RecordSteps = interval_RecordSteps
+        self.interval_VedioTimer = interval_VedioTimer
+
         # import pdb; pdb.set_trace()
 
     def to_img(self, obs, frame_size=(100, 100)):
@@ -247,26 +251,36 @@ class Runner(AbstractEnvRunner):
             if self.render:
                 self.env.render()
 
-            if self.record and _%100==0:
+            if self.record and _%self.interval_RecordSteps == 0:
                 images = self.env.render(mode='rgb_array')
 
                 if self.env.renderMode == 'multiple' and self.env.num_envs > 1:
-                    if self.encoders == None:
-                        self.encoders = [ImageEncoder(output_path=osp.join(logger.get_dir(), 'arm3d_%d_env.mp4' % idx),frame_shape=images[idx].shape,frames_per_sec=15) for idx in range(self.env.num_envs) ]
+                    if self.encoders == None or self.vedioTimer%self.interval_VedioTimer == 0:
+                        self.vediosDir = osp.join(logger.get_dir(), 'vedios')
+                        savepath = osp.join(self.vediosDir, '%.5i'%self.vedioTimer)
+                        os.makedirs(savepath, exist_ok=True)
+                        print('Saving vedios to', savepath)
+                        self.encoders = [ImageEncoder(output_path=osp.join(savepath, 'arm3d_%d_env.mp4' % idx),frame_shape=images[idx].shape,frames_per_sec=15) for idx in range(self.env.num_envs) ]
                     
                     for index,name in enumerate(self.env.envId()): 
                         compressed_image = self.to_img(images[index], frame_size=images[index].shape[:-1][::-1])
                         cv2.waitKey(10)
                         self.encoders[name].capture_frame(compressed_image)
+
                 elif self.env.renderMode == 'single':
-                    if self.encoders == None:
-                        self.encoders = ImageEncoder(output_path=osp.join(logger.get_dir(), 'arm3d_env.mp4'),frame_shape=images.shape, frames_per_sec=15) 
+                    if self.encoders == None or self.vedioTimer%self.interval_VedioTimer == 0:
+                        self.vediosDir = osp.join(logger.get_dir(), 'vedios')
+                        savepath = osp.join(self.vediosDir, '%.5i'%self.vedioTimer)
+                        os.makedirs(savepath, exist_ok=True)
+                        print('Saving vedios to', savepath)
+                        self.encoders = ImageEncoder(output_path=osp.join(savepath, 'arm3d_env.mp4'),frame_shape=images.shape, frames_per_sec=15) 
                     
                     compressed_image = self.to_img(images, frame_size=images.shape[:-1][::-1])
                     cv2.waitKey(10)
                     self.encoders.capture_frame(compressed_image)
                 else:
                     print("Error: unknow render mode")
+                
                 # @llx
                 # images = self.env.render(mode='rgb_array').reshape(self.env.num_envs,200,300,3)
                 # # import pdb; pdb.set_trace()
@@ -310,6 +324,8 @@ class Runner(AbstractEnvRunner):
             delta = mb_rewards[t] + self.gamma * nextvalues * nextnonterminal - mb_values[t]
             mb_advs[t] = lastgaelam = delta + self.gamma * self.lam * nextnonterminal * lastgaelam
         mb_returns = mb_advs + mb_values
+
+        self.vedioTimer += 1
         return (*map(sf01, (mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs)),
             mb_states, epinfos)
 # obs, returns, masks, actions, values, neglogpacs, states = runner.run()
@@ -328,6 +344,7 @@ def constfn(val):
 def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2048, ent_coef=0.01, lr=3e-4,
             vf_coef=0.5,  max_grad_norm=0.5, gamma=0.99, lam=0.95, render=False,
             log_interval=10, nminibatches=4, noptepochs=4, cliprange=0.2,record=False,
+            interval_RecordSteps=100, interval_VedioTimer=10,  interval_RecordUpdate=10,
             save_interval=50, load_path=None, **network_kwargs):
     '''
     Learn policy using PPO algorithm (https://arxiv.org/abs/1707.06347)
@@ -416,7 +433,7 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
         print("========== load from ", load_path)
         # import pdb; pdb.set_trace()
     # Instantiate the runner object
-    runner = Runner(env=env, model=model, nsteps=nsteps, gamma=gamma, lam=lam, render=render)
+    runner = Runner(env=env, model=model, nsteps=nsteps, gamma=gamma, lam=lam, render=render,interval_RecordSteps=interval_RecordSteps, interval_VedioTimer=interval_VedioTimer)
     if eval_env is not None:
         eval_runner = Runner(env = eval_env, model = model, nsteps = nsteps, gamma = gamma, lam= lam, render=render)
 
@@ -441,7 +458,7 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=2
 
         # llx-vedio
         # for too much IO consumption, the following method is replaced by play in run.py 
-        if update%1 == 0 and record:
+        if update%interval_RecordUpdate == 0 and record:
             runner.record = True
 
         obs, returns, masks, actions, values, neglogpacs, states, epinfos = runner.run() #pylint: disable=E0632

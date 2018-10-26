@@ -1,4 +1,4 @@
-import sys
+import sys,os
 import multiprocessing
 import os.path as osp
 import gym
@@ -93,6 +93,9 @@ def train(args, extra_args):
         render=render,
         record = args.record,
         ent_coef=args.ent_coef,
+        interval_RecordUpdate=args.interval_RecordUpdate,
+        interval_RecordSteps=args.interval_RecordSteps,
+        interval_VedioTimer=args.interval_VedioTimer,
         **alg_kwargs
     )
 
@@ -142,8 +145,8 @@ def build_env(args, mode="train"):
     #         elif args.renderMode == 'single':
     #             render = False
     #    else : render = False
-       env = make_vec_env(env_id, env_type, num_env or 1, seed, reward_scale=args.reward_scale, render=render,\
-            stepNumMax=args.stepNumMax, sparse1_dis=args.sparse1_dis, task2InitNoise=args.task2InitNoise,\
+       env = make_vec_env(env_id, env_type, num_env or 1, seed, reward_scale=args.reward_scale, render=render,
+            stepNumMax=args.stepNumMax, sparse1_dis=args.sparse1_dis, task2InitNoise=args.task2InitNoise,
             rewardModeForArm3d=args.rewardModeForArm3d, initStateForArm3dTask2=[0.56, 0.5, -1.5, -1.74429440, -0.6, -0.9, 1.75])
        if env_type == 'mujoco' or 'arm3d':
            if args.normalize:
@@ -243,7 +246,11 @@ def main():
         rank = 0
 
         if args.save_path != None:
-            logger.configure(getPath(args.save_path,args),format_strs=['stdout', 'log', 'csv','tensorboard'])
+            savePath = getPath(args.save_path, args)
+            i = 0
+            while os.path.isdir(savePath):
+                savePath += '_' + str(i)
+            logger.configure(savePath,format_strs=['stdout', 'log', 'csv','tensorboard'])
         else:logger.configure()
 
         if args.load_path != None:

@@ -8,10 +8,13 @@ source activate rllab_goal_rl
 # --renderMode 'single'
 # --renderMode 'multiple'
 
+# 10.26
+    # change arm3d_task12 to arm3d_task12_with and arm3d_task12_without
+
 # 10.25
 
     # test code can run
-    python -m baselines.run --render --renderMode 'multiple' --record --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task1 --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 2 --save_path ./result/testmultiple
+    python -m baselines.run --record --ps _TfRunningMeanStd_TF_adam --ent_coef 0.00  --stepNumMax 1111 --env arm3d_task12_without --normalize --reward_scale 1 --alg=ppo2 --network=mlp --num_timesteps=36864000 --seed 0 --num_env 3 --save_path ./result/test
 
     # # run tasks 1026Experiments 
     #     # task 1
